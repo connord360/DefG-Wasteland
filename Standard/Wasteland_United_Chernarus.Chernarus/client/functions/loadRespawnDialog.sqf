@@ -1,9 +1,10 @@
-//	@file Version: 1.0
+//	@file Version: 1.1
 //	@file Name: loadRespawnDialog.sqf
-//	@file Author: [404] Deadbeat, [404] Costlyy
-//	@file Created: 20/11/2012 05:19
+//	@file Author: [404] Deadbeat, [404] Costlyy, Redshirt_Ensign
+//	@file Created: 05/04/2013 02:00
 //	@file Args:
 
+#define respawn_dialog 3400
 #define respawn_Content_Text 3401
 #define respawn_MissionUptime_Text 3402
 #define respawn_Town_Button0 3403
@@ -16,279 +17,284 @@
 #define respawn_PlayersInTown_Text2 3410
 #define respawn_PlayersInTown_Text3 3411
 #define respawn_PlayersInTown_Text4 3412
-
-waitUntil{!isnil "bis_fnc_init"};
-disableSerialization;
-
-private["_player","_city","_radius","_name","_enemyCount","_friendlyCount","_side","_dynamicControlsArray", "_enemyPresent","_inGroup","_tempArray", "_text", "_players", "_playerArray"];
-
-createDialog "RespawnSelectionDialog";
-_display = uiNamespace getVariable "RespawnSelectionDialog";
-_display displayAddEventHandler ["KeyDown", "_return = false; if(respawnDialogActive && (_this select 1) == 1) then {_return = true;}; _return"];
-_respawnText = _display displayCtrl respawn_Content_Text;
-_missionUptimeText = _display displayCtrl respawn_MissionUptime_Text;
-_beaconBlockDistance = 300;
-
-if(playerSide in [west]) then {_side = "Blufor"};
-if(playerSide in [east]) then {_side = "Opfor"};
-if(str(playerSide) == "GUER") then {_side = "Independent"};
-_respawnText ctrlSetStructuredText parseText (format["You are on %1.<br/>Please select a spawn point.",_side]);
-respawnDialogActive = true;
-
-_dynamicControlsArray = [
-	[respawn_Town_Button0,respawn_PlayersInTown_Text0],
-    [respawn_Town_Button1,respawn_PlayersInTown_Text1],
-    [respawn_Town_Button2,respawn_PlayersInTown_Text2],
-    [respawn_Town_Button3,respawn_PlayersInTown_Text3],
-    [respawn_Town_Button4,respawn_PlayersInTown_Text4]];
-
-{
-    _button = _display displayCtrl (_x select 0);
-    _button ctrlSetText format[""];
-    _button ctrlShow false;
-}foreach _dynamicControlsArray;
-
-_friendlyTowns = [];
-_tempArray = [];
-showBeacons = false;
-_inGroup = false;
-while {respawnDialogActive} do
-{
-    _timeText = [time/60/60] call BIS_fnc_timeToString;
-    _missionUptimeText ctrlSetText format["Mission Uptime: %1", _timeText];
-       
-    if(_side != "Independent") then
-    {  
-        if(!showBeacons) then {
-            {
-                _pos = getMarkerPos (_x select 0);
-                _name = _x select 2;
-                _rad = _x select 1;
-                _playerArray = [];
-
-                {
-                    if((getPos _x distance _pos) < _rad) then
-                    {
-                        if(side _x == playerSide AND alive _x) then
-                        {
-                            _friendlyCount = _friendlyCount + 1;
-                            _playerArray set [count _playerArray, name _x];      
-                        }else{
-                            _enemyCount = _enemyCount + 1;
-                        };
-                    }; 
-                }forEach playableUnits;  
-
-                if((_friendlyCount > 0) AND (_enemyCount == 0)) then
-                {
-                    _friendlyTowns set [count _friendlyTowns, [_name, _playerArray]];                    
-                };
-                _friendlyCount = 0;
-                _enemyCount = 0; 
-                
-            }forEach cityList; 
-
-            {
-                _button = _display displayCtrl (_x select 0);
-                _text = _display displayCtrl (_x select 1);
-                
-                if(_forEachIndex <= count _friendlyTowns -1) then
-                {
-                	// Set the button details
-                    _button ctrlShow true;
-                    _name = _friendlyTowns select _forEachIndex select 0;
-                    _button ctrlSetText	format["%1",_name]; 
-                    // Set the players in town text details
-                    _text ctrlShow true;
-                    _players = _friendlyTowns select _forEachIndex select 1;
-                    _text ctrlSetText format["%1",_players]; 
-                } else {
-                    _name = "";
-                    // reset button text and disable
-                    _button ctrlSetText _name;
-                    _button ctrlShow false; 
-                    // reset players text and disable
-                    _text ctrlSetText _name;
-                    _text ctrlShow false; 
-                };          
-            }forEach _dynamicControlsArray;
-            
-            _friendlyTowns = [];    
-            
-        } else {
-            _enemyCount = 0;
-            {
-                _button = _display displayCtrl (_x select 0);
-                _text = _display displayCtrl (_x select 1);
-                
-                _button ctrlSetText format[""];
-                _button ctrlShow false;   
-                _text ctrlSetText format[""];
-                _text ctrlShow false;  
-                
-            }foreach _dynamicControlsArray;
-            
-            {
-                if(_side == "Blufor") then {
-                    _button = _display displayCtrl (_dynamicControlsArray select _forEachIndex select 0);
-                    _centrePos = (pvar_beaconListBlu select _forEachIndex) select 1;
-
-                    {
-                        _onTeam = str(side _x) in ["EAST","GUER"];   
-                        if(_onTeam) then {
-                            if((getPos _x distance _centrePos) < _beaconBlockDistance) then {
-                                if(!(side _x == playerSide)) then {
-                                    _enemyCount = _enemyCount + 1; 
-                                };   
-                            }; 
-                        };  
-                    }forEach playableUnits;
-
-                    if(_enemyCount == 0) then {
-                        _button ctrlShow true;   
-                        _name = (pvar_beaconListBlu select _forEachIndex) select 0;
-                        _button ctrlSetText	format["%1",_name]; 
-                    } else {
-                        _name = "";
-                        _button ctrlSetText _name;
-                        _button ctrlShow false; 
-                    };
-                }; 
-                _enemyCount = 0;         
-            }forEach pvar_beaconListBlu;
-
-            {
-                if(_side == "Opfor") then {
-                    _button = _display displayCtrl (_dynamicControlsArray select _forEachIndex select 0);
-                    _centrePos = (pvar_beaconListRed select _forEachIndex) select 1;
-
-                    {
-                        _onTeam = str(side _x) in ["WEST","GUER"];   
-                        if(_onTeam) then {
-                            if((getPos _x distance _centrePos) < _beaconBlockDistance) then {
-                                if(!(side _x == playerSide)) then {
-                                    _enemyCount = _enemyCount + 1; 
-                                };   
-                            }; 
-                        };  
-                    }forEach playableUnits;
+#define respawn_BlockedSpawns_Text 3413
 
 
-                    if(_enemyCount == 0) then {
-                        _button ctrlShow true;   
-                        _name = (pvar_beaconListRed select _forEachIndex) select 0;
-                        _button ctrlSetText	format["%1",_name]; 
-                    } else {
-                        _name = "";
-                        _button ctrlSetText _name;
-                        _button ctrlShow false; 
-                    };   
-                };
-                _enemyCount = 0;                   
-            }forEach pvar_beaconListRed;       
-        };
-    };
-    
-    if((count units group player > 1) AND (_side == "Independent")) then
-    {
-        _tempArray = [];
-        {
-        	_tempArray set [count _tempArray,getPlayerUID _x];    
-        }forEach units player;
-                    
-        //Towns
-    	if(!showBeacons) then 
-        {
-        	{
-                _pos = getMarkerPos (_x select 0);
-                _name = _x select 2;
-                _rad = _x select 1;
-                _friendlyCount = 0;
-                _enemyCount = 0; 
-                _playerArray = [];
 
-                {
-                    if((getPos _x distance _pos) < _rad) then
-                    {
-                        if(getPlayerUID _x in _tempArray) then
-                        {
-                            _friendlyCount = _friendlyCount + 1;
-                            _playerArray set [count _playerArray, name _x]; 
-                        }else{
-                            _enemyCount = _enemyCount + 1;
-                        };
-                    };
-                }forEach playableUnits;
+	class RespawnSelectionDialog {
+		idd = respawn_dialog;
+		movingEnable = false;
+		enableSimulation = true;
+		onLoad = "uiNamespace setVariable ['RespawnSelectionDialog', _this select 0]";
+	
+	class controlsBackground {
 
-                if((_friendlyCount > 0) AND (_enemyCount == 0)) then
-                {
-                    _friendlyTowns set [count _friendlyTowns, [_name, _playerArray]]; 
-                };
-            }forEach cityList; 
+		class MainBackground: w_RscPicture
+		{
+			idc = -1;
+			text = "\ca\ui\data\ui_background_controlers_ca.paa";
 
-            {
-                _button = _display displayCtrl (_x select 0);
-                _text = _display displayCtrl (_x select 1);
-                
-                if(_forEachIndex <= count _friendlyTowns -1) then
-                {
-                    // Set the button details
-                    _button ctrlShow true;
-                    _name = _friendlyTowns select _forEachIndex select 0;
-                    _button ctrlSetText	format["%1",_name]; 
-                    // Set the players in town text details
-                    _text ctrlShow true;
-                    _players = _friendlyTowns select _forEachIndex select 1;
-                    _text ctrlSetText format["%1",_players]; 
-                } else {
-                    _name = "";
-                    // reset button text and disable
-                    _button ctrlSetText _name;
-                    _button ctrlShow false; 
-                    // reset players text and disable
-                    _text ctrlSetText _name;
-                    _text ctrlShow false; 
-                };          
-            }forEach _dynamicControlsArray;
-            _friendlyTowns = [];    
-        } else { //Beacons
-        
-			{
-		        _tempArray = [];
-			    {
-			    	_tempArray set [count _tempArray,getPlayerUID _x];    
-			    }forEach units player;
-		    
-		    	_button = _display displayCtrl (_dynamicControlsArray select _forEachIndex select 0);
-		        _centrePos = (pvar_beaconListIndep select _forEachIndex) select 1;
-		        _ownerUID = (pvar_beaconListIndep select _forEachIndex) select 3;
-				_enemyCount = 0;
-		        
-		        {
-		        	_onTeam = str(side _x) in ["EAST","WEST"];   
-		            if(_onTeam) then {
-		            	if((getPos _x distance _centrePos) < _beaconBlockDistance) then {
-		                	if(getPlayerUID _x in _tempArray) then {
-		                    	 
-		                    } else {
-		                    	_enemyCount = _enemyCount + 1;    
-		                    };   
-		                }; 
-		            };  
-		        }forEach playableUnits;
+			x = 0.2745 * safezoneW + safezoneX;
+			y = 0.166 * safezoneH + safezoneY;
+			w = 0.600 * safezoneW;
+			h = 0.650 * safezoneH;
+		};
+
+		class RespawnMenuTitle: w_RscText
+		{
+			idc = -1;
+			text = "Respawn Menu";
+			sizeEx = 0.06;
+
+			x = 0.4475 * safezoneW + safezoneX;
+			y = 0.190 * safezoneH + safezoneY;
+			w = 0.105 * safezoneW;
+			h = 0.035 * safezoneH;
+		};
+
+		class RespawnStructuredText: w_RscStructuredText
+		{
+			idc = respawn_Content_Text;
+			text = "";
+
+			x = 0.350 * safezoneW + safezoneX;
+			y = 0.246 * safezoneH + safezoneY;
+			w = 0.300 * safezoneW;
+			h = 0.060 * safezoneH;
+		};
+
+		class TopLine: w_RscPicture
+		{
+			idc = -1;
+			text = "#(argb,8,8,3)color(1,1,1,1)";
+
+			x = 0.328 * safezoneW + safezoneX;
+			y = 0.360 * safezoneH + safezoneY;
+			w = 0.343 * safezoneW;
+			h = 0.0025 * safezoneH;
+		};
+
+		class MiddleLine: w_RscPicture
+		{
+			idc = -1;
+			text = "#(argb,8,8,3)color(1,1,1,1)";
+
+			x = 0.328 * safezoneW + safezoneX;
+			y = 0.426 * safezoneH + safezoneY;
+			w = 0.343 * safezoneW;
+			h = 0.0025 * safezoneH;
+		};
+
+		class BottomLine: w_RscPicture
+		{
+			idc = -1;
+			text = "#(argb,8,8,3)color(1,1,1,1)";
+
+			x = 0.328 * safezoneW + safezoneX;
+			y = 0.693 * safezoneH + safezoneY;
+			w = 0.343 * safezoneW;
+			h = 0.0025 * safezoneH;
+		};
+
+		class MissionUptimeText: w_RscText
+		{
+			idc = respawn_MissionUptime_Text;
+			text = "Mission Uptime: 00:00:00";
+
+			x = 0.562 * safezoneW + safezoneX;
+			y = 0.752 * safezoneH + safezoneY;
+			w = 0.110 * safezoneW;
+			h = 0.025 * safezoneH;
+		};
+
+		class BlockedSpawnsText1: w_RscText
+		{
+			idc = -1;
+			text = "Blocked Spawns:";
+
+			x = 0.343 * safezoneW + safezoneX;
+			y = 0.693 * safezoneH + safezoneY;
+			w = 0.095 * safezoneW;
+			h = 0.025 * safezoneH;
+		};
+
+		class BlockedSpawnsText2: w_RscText
+		{
+			idc = respawn_BlockedSpawns_Text;
+			text = "";
+
+			x = 0.443 * safezoneW + safezoneX;
+			y = 0.693 * safezoneH + safezoneY;
+			w = 0.230 * safezoneW;
+			h = 0.025 * safezoneH;
+		};
+
+	};
+	
+	class controls {
+
+		class PlayersInTown0: w_RscText
+		{
+			idc = respawn_PlayersInTown_Text0;
+			text = "";
+
+			x = 0.443 * safezoneW + safezoneX;
+			y = 0.443 * safezoneH + safezoneY;
+			w = 0.230 * safezoneW;
+			h = 0.025 * safezoneH;
+		};
 		
-		        if((_enemyCount == 0) AND (_ownerUID in _tempArray)) then {
-		        	_button ctrlShow true;   
-		            _name = (pvar_beaconListIndep select _forEachIndex) select 0;
-		            _button ctrlSetText	format["%1",_name]; 
-		        } else {
-		        	_name = "";
-		            _button ctrlSetText _name;
-		            _button ctrlShow false; 
-		        };
-			}forEach pvar_beaconListIndep;    
-            
-        };	    
-    };
-    sleep 0.1;
+		class PlayersInTown1: w_RscText
+		{
+			idc = respawn_PlayersInTown_Text1;
+			text = "";
+
+			x = 0.443 * safezoneW + safezoneX;
+			y = 0.493 * safezoneH + safezoneY;
+			w = 0.230 * safezoneW;
+			h = 0.025 * safezoneH;
+		};
+		
+		class PlayersInTown2: w_RscText
+		{
+			idc = respawn_PlayersInTown_Text2;
+			text = "";
+
+			x = 0.443 * safezoneW + safezoneX;
+			y = 0.543 * safezoneH + safezoneY;
+			w = 0.230 * safezoneW;
+			h = 0.025 * safezoneH;
+		};
+		
+		class PlayersInTown3: w_RscText
+		{
+			idc = respawn_PlayersInTown_Text3;
+			text = "";
+
+			x = 0.443 * safezoneW + safezoneX;
+			y = 0.593 * safezoneH + safezoneY;
+			w = 0.230 * safezoneW;
+			h = 0.025 * safezoneH;
+		};
+		
+		class PlayersInTown4: w_RscText
+		{
+			idc = respawn_PlayersInTown_Text4;
+			text = "";
+
+			x = 0.443 * safezoneW + safezoneX;
+			y = 0.643 * safezoneH + safezoneY;
+			w = 0.230 * safezoneW;
+			h = 0.025 * safezoneH;
+		};
+
+		class RandomSpawnButton: w_RscButton
+		{
+			idc = -1;
+			onButtonClick = "[0] execVM 'client\functions\spawnAction.sqf'";
+			text = "Random";
+
+			x = 0.460* safezoneW + safezoneX;
+			y = 0.310 * safezoneH + safezoneY;
+			w = 0.078 * safezoneW;
+			h = 0.033 * safezoneH;
+		};
+	
+		class LoadTownsButton: w_RscButton
+		{
+			idc = -1;
+			onButtonClick = "[0] execVM 'client\functions\switchButtonNames.sqf'";
+			text = "Towns";
+
+			x = 0.406 * safezoneW + safezoneX;
+			y = 0.384 * safezoneH + safezoneY;
+			w = 0.078 * safezoneW;
+			h = 0.033 * safezoneH;
+		};
+
+		class LoadBeaconsButton: w_RscButton
+		{
+			idc = -1;
+			onButtonClick = "[1] execVM 'client\functions\switchButtonNames.sqf'";
+			text = "Beacons";
+
+			x = 0.515 * safezoneW + safezoneX;
+			y = 0.384 * safezoneH + safezoneY;
+			w = 0.078 * safezoneW;
+			h = 0.033 * safezoneH;
+		};
+	
+		class TownButton0: w_RscButton
+		{
+			idc = respawn_Town_Button0;
+			onButtonClick = "[1,0] execVM 'client\functions\spawnAction.sqf'";
+			text = "";
+
+			x = 0.343 * safezoneW + safezoneX;
+			y = 0.443 * safezoneH + safezoneY;
+			w = 0.078 * safezoneW;
+			h = 0.033 * safezoneH;
+		};
+
+		class TownButton1: w_RscButton
+		{
+			idc = respawn_Town_Button1;
+			onButtonClick = "[1,1] execVM 'client\functions\spawnAction.sqf'";
+			text = "";
+
+			x = 0.343 * safezoneW + safezoneX;
+			y = 0.493 * safezoneH + safezoneY;
+			w = 0.078 * safezoneW;
+			h = 0.033 * safezoneH;
+		};
+
+		class TownButton2: w_RscButton
+		{
+			idc = respawn_Town_Button2;
+			onButtonClick = "[1,2] execVM 'client\functions\spawnAction.sqf'";
+			text = "";
+
+			x = 0.343 * safezoneW + safezoneX;
+			y = 0.543 * safezoneH + safezoneY;
+			w = 0.078 * safezoneW;
+			h = 0.033 * safezoneH;
+		};
+
+		class TownButton3: w_RscButton
+		{
+			idc = respawn_Town_Button3;
+			onButtonClick = "[1,3] execVM 'client\functions\spawnAction.sqf'";
+			text = "";
+
+			x = 0.343 * safezoneW + safezoneX;
+			y = 0.593 * safezoneH + safezoneY;
+			w = 0.078 * safezoneW;
+			h = 0.033 * safezoneH;
+		};
+
+		class TownButton4: w_RscButton
+		{
+			idc = respawn_Town_Button4;
+			onButtonClick = "[1,4] execVM 'client\functions\spawnAction.sqf'";
+			text = "";
+
+			x = 0.343 * safezoneW + safezoneX;
+			y = 0.643 * safezoneH + safezoneY;
+			w = 0.078 * safezoneW;
+			h = 0.033 * safezoneH;
+		};
+
+		class BackToLobby: w_RscButton
+		{
+			idc = -1;
+			onButtonClick = "endMission 'LOSER'";
+			text = "Lobby";
+
+			x = 0.328 * safezoneW + safezoneX;
+			y = 0.752 * safezoneH + safezoneY;
+			w = 0.078 * safezoneW;
+			h = 0.033 * safezoneH;
+			color[] = {0.95,0.1,0.1,1};
+		};	
+	};
 };
