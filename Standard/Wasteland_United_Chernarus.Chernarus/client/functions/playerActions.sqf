@@ -27,9 +27,6 @@ aActionsIDs = aActionsIDs + [player addAction["Pickup Money", "client\actions\pi
 aActionsIDs = aActionsIDs + [player addAction[("<t color=""#E01B1B"">Destroy spawn beacon</t>"), "client\actions\pickupBeacon.sqf", 1, 1, false, false, "", 'player distance (nearestobjects [player, ["Satelit"],  5] select 0) < 5']];
 aActionsIDs = aActionsIDs + [player addAction[("<t color=""#21DE31"">Steal spawn beacon</t>"), "client\actions\pickupBeacon.sqf", 0, 1, false, false, "", 'player distance (nearestobjects [player, ["Satelit"],  5] select 0) < 5']];
 
-//Detect Nearest SpawnBeacon (Satelit)
-aActionsIDs = aActionsIDs + [player addAction[("<t color=""#21DE31"">Beacon Detector</t>"), "client\actions\detectBeacon.sqf", 1, 1, false, false, "", 'player distance (nearestobjects [player, ["Satelit"],  900] select 0) < 900 AND ((nearestobjects [player, ["Satelit"],  900] select 0) getVariable "faction") != "WORLD"']];
-
 //Interact with radar trucks
 aActionsIDs = aActionsIDs + [player addAction[("<t color=""#21DE31"">Deploy radar</t>"), "client\functions\radarDeploy.sqf",nil, 6, false, false, "", '_currRadar = (nearestobjects [player, ["M1133_MEV_EP1"],  5]); player distance (_currRadar select 0) < 5; ((nearestObjects[player, ["M1133_MEV_EP1"], 10] select 0) getVariable "deployed") == 0 AND str(playerSide) != "GUER"']];
 aActionsIDs = aActionsIDs + [player addAction[("<t color=""#E01B1B"">Repack radar</t>"), "client\functions\radarPack.sqf", nil, 6, false, false, "", '_currRadar = (nearestobjects [player, ["M1130_HQ_unfolded_Base_EP1"],  5]); player distance (_currRadar select 0) < 5; ((nearestObjects[player, ["M1130_HQ_unfolded_Base_EP1"], 10] select 0) getVariable "deployed") == 1 AND str(playerSide) != "GUER"']];
