@@ -119,7 +119,7 @@
 			<English>Player Menu</English>
 		</Key>
 	</Package>
-	<Package name="Errors">
+<Package name="Errors">
 		<Key ID="STR_WL_Errors_InProgress">
 			<English>YOU ARE ALREADY PERFORMING ANOTHER ACTION!</English>
 		</Key>
@@ -131,12 +131,15 @@
 		</Key>
 		<Key ID="STR_WL_Errors_BeaconInVehicle">
 			<English>YOU CANNOT ENTER A VEHICLE WHILE PLACING A SPAWN BEACON!</English>
-		</Key>		
+		</Key>
 		<Key ID="STR_WL_Errors_BeaconTooMany">
 			<English>YOU ARE ALREADY HAVE TOO MANY OF THAT OBJECT!</English>
-		</Key>			
-		<Key ID="STR_WL_Errors_IllegalWeapon">
-			<English>ILLEGAL WEAPON DETECTED: %1</English>
-		</Key>			
+		</Key>
+		<Key ID="STR_WL_Errors_BeaconTooClose">
+			<English>YOU ARE TOO CLOSE TOO OTHER SPAWN POINTS %1 TO PLACE A BEACON!</English>
+		</Key>
+		<Key ID="STR_WL_Errors_BeaconOverWater">
+			<English>CANNOT PLACE A BEACON OVER WATER!</English>
+		</Key>
 	</Package>
 </Project>
